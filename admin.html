@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PPC Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800;900&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f5f3ef;
+  --surface: #ffffff;
+  --surface2: #f0ede8;
+  --border: #e2ddd6;
+  --text: #1a1714;
+  --muted: #8a8178;
+  --accent: #d4500a;
+  --accent2: #1a6b4a;
+  --accent3: #1a3a6b;
+  --danger: #c0392b;
+  --warn: #d4870a;
+  --sidebar-w: 240px;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--text);
+  min-height: 100vh;
+  position: fixed;
+  top: 0; left: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.sidebar-logo {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-logo h2 {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.sidebar-logo p {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.sidebar-nav {
+  padding: 16px 12px;
+  flex: 1;
+}
+
+.nav-section {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.25);
+  padding: 12px 12px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  margin-bottom: 2px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.nav-item.active { color: #fff; background: rgba(255,255,255,0.1); }
+.nav-item .icon { font-size: 15px; width: 20px; text-align: center; }
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Epilogue', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.user-info p { font-size: 12px; color: #fff; font-weight: 500; }
+.user-info span { font-size: 10px; color: rgba(255,255,255,0.35); }
+
+/* ── Main ── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 36px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-title {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #b8430a; }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+.btn-danger:hover { background: #fee2e2; }
+.btn-success { background: #f0fdf4; color: var(--accent2); border: 1px solid #bbf7d0; }
+.btn-success:hover { background: #dcfce7; }
+
+/* ── Pages ── */
+.page { display: none; padding: 32px 36px; animation: fadeIn 0.2s ease; }
+.page.active { display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Overview ── */
+.overview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.stat-card .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.stat-card .value {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.stat-card .sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.stat-card .sub.up { color: var(--accent2); }
+.stat-card .sub.down { color: var(--danger); }
+
+/* Client cards grid */
+.clients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.client-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.client-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+
+.client-card-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.client-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.client-avatar {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Epilogue', sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.client-card-name {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.client-card-period { font-size: 11px; color: var(--muted); }
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.green { background: #22c55e; }
+.status-dot.yellow { background: #f59e0b; }
+.status-dot.red { background: #ef4444; }
+
+.client-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 16px 20px;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.metric-mini .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-mini .val {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-top: 2px;
+}
+
+.client-card-actions {
+  padding: 12px 20px;
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Client Manager ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.section-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+
+td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badge.active { background: #f0fdf4; color: #15803d; }
+.badge.draft { background: #fef9c3; color: #92400e; }
+.badge.paused { background: #fef2f2; color: #b91c1c; }
+
+/* ── Data Input ── */
+.data-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  max-width: 820px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-row-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+
+label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+input, select, textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 24px 0;
+}
+
+.platform-section {
+  margin-bottom: 24px;
+}
+
+.platform-label {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.platform-label .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Portal Links ── */
+.link-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  transition: box-shadow 0.15s;
+}
+
+.link-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+.link-info { flex: 1; }
+.link-client { font-family: 'Epilogue', sans-serif; font-size: 15px; font-weight: 700; }
+.link-url {
+  font-size: 12px;
+  color: var(--accent);
+  font-family: monospace;
+  margin-top: 3px;
+  background: #fff7f4;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.link-actions { display: flex; gap: 8px; }
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  transform: translateY(10px);
+  transition: transform 0.2s;
+}
+
+.modal-overlay.open .modal { transform: translateY(0); }
+
+.modal-title {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--text);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── AI Insights panel ── */
+.ai-panel {
+  background: linear-gradient(135deg, #1a1714 0%, #2d1f0e 100%);
+  border-radius: var(--radius);
+  padding: 24px;
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+.ai-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.ai-panel-title {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-tag {
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 100px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ai-insight-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.75);
+  white-space: pre-wrap;
+}
+
+.ai-insight-text.loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255,255,255,0.4);
+  font-size: 13px;
+}
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.15);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .overview-stats { grid-template-columns: repeat(2, 1fr); }
+  .form-row-4 { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h2>PPC Command</h2>
+    <p>Admin Panel</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Main</div>
+    <button class="nav-item active" onclick="showPage('overview', this)">
+      <span class="icon">◈</span> Overview
+    </button>
+    <button class="nav-item" onclick="showPage('clients', this)">
+      <span class="icon">◉</span> Clients
+    </button>
+    <button class="nav-item" onclick="showPage('data-input', this)">
+      <span class="icon">◎</span> Data Input
+    </button>
+    <div class="nav-section">Sharing</div>
+    <button class="nav-item" onclick="showPage('portals', this)">
+      <span class="icon">⊕</span> Client Portals
+    </button>
+    <button class="nav-item" onclick="showPage('reports', this)">
+      <span class="icon">⊞</span> Reports
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-pill">
+      <div class="avatar">YT</div>
+      <div class="user-info">
+        <p>Yoav Tech</p>
+        <span>Admin</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- ── OVERVIEW PAGE ── -->
+  <div class="topbar" id="topbar">
+    <div class="topbar-title" id="page-title">Overview</div>
+    <div class="topbar-actions">
+      <button class="btn btn-secondary btn-sm" onclick="generateInsights()">✦ AI Insights</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-client-modal')">+ Add Client</button>
+    </div>
+  </div>
+
+  <div class="page active" id="page-overview">
+    <div class="overview-stats">
+      <div class="stat-card">
+        <div class="label">Active Clients</div>
+        <div class="value" id="stat-clients">3</div>
+        <div class="sub">of 5 total</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Revenue</div>
+        <div class="value">$95.9K</div>
+        <div class="sub up">▲ 26.1% vs prev period</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Blended ROAS</div>
+        <div class="value">3.50x</div>
+        <div class="sub up">▲ 0.5x improvement</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Conversions</div>
+        <div class="value">1,850</div>
+        <div class="sub up">▲ 21.7% vs prev</div>
+      </div>
+    </div>
+
+    <div class="ai-panel" id="ai-overview-panel">
+      <div class="ai-panel-header">
+        <div class="ai-panel-title">✦ AI Team Insights <span class="ai-tag">Claude</span></div>
+        <button class="btn btn-ghost btn-sm" style="color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.15)" onclick="generateInsights()">Refresh</button>
+      </div>
+      <div class="ai-insight-text" id="ai-overview-text">Click "AI Insights" or "Refresh" to get Claude's cross-client analysis for your team.</div>
+    </div>
+
+    <div class="section-header">
+      <div>
+        <div class="section-title">All Clients</div>
+        <div class="section-sub">Performance snapshot — last 30 days</div>
+      </div>
+    </div>
+
+    <div class="clients-grid" id="clients-grid"></div>
+  </div>
+
+  <!-- ── CLIENTS PAGE ── -->
+  <div class="page" id="page-clients">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Client Manager</div>
+        <div class="section-sub">Add, edit and manage all client accounts</div>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('add-client-modal')">+ Add Client</button>
+    </div>
+    <table id="clients-table">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Status</th>
+          <th>Google Ads ID</th>
+          <th>Meta Ads ID</th>
+          <th>Portal</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="clients-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- ── DATA INPUT PAGE ── -->
+  <div class="page" id="page-data-input">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Data Input</div>
+        <div class="section-sub">Update monthly PPC performance numbers per client</div>
+      </div>
+    </div>
+    <div class="data-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Client</label>
+          <select id="di-client">
+            <option value="">Select client…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Report Period</label>
+          <input type="month" id="di-period" />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="platform-section">
+        <div class="platform-label">
+          <span class="dot" style="background:#00c97a"></span> Google Ads
+        </div>
+        <div class="form-row-4">
+          <div class="form-group"><label>Impressions</label><input type="number" id="g-impressions" placeholder="284000" /></div>
+          <div class="form-group"><label>Clicks</label><input type="number" id="g-clicks" placeholder="9312" /></div>
+          <div class="form-group"><label>CTR %</label><input type="number" step="0.01" id="g-ctr" placeholder="3.28" /></div>
+          <div class="form-group"><label>Avg CPC $</label><input type="number" step="0.01" id="g-cpc" placeholder="1.42" /></div>
+        </div>
+        <div class="form-row-4">
+          <div class="form-group"><label>Conversions</label><input type="number" id="g-conv" placeholder="742" /></div>
+          <div class="form-group"><label>CPA $</label><input type="number" step="0.01" id="g-cpa" placeholder="17.82" /></div>
+          <div class="form-group"><label>Revenue $</label><input type="number" id="g-revenue" placeholder="52140" /></div>
+          <div class="form-group"><label>ROAS</label><input type="number" step="0.01" id="g-roas" placeholder="3.94" /></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="platform-section">
+        <div class="platform-label">
+          <span class="dot" style="background:#4a7fff"></span> Meta Ads
+        </div>
+        <div class="form-row-4">
+          <div class="form-group"><label>Impressions</label><input type="number" id="m-impressions" placeholder="521000" /></div>
+          <div class="form-group"><label>Clicks</label><input type="number" id="m-clicks" placeholder="14820" /></div>
+          <div class="form-group"><label>CTR %</label><input type="number" step="0.01" id="m-ctr" placeholder="2.84" /></div>
+          <div class="form-group"><label>Avg CPC $</label><input type="number" step="0.01" id="m-cpc" placeholder="0.94" /></div>
+        </div>
+        <div class="form-row-4">
+          <div class="form-group"><label>Conversions</label><input type="number" id="m-conv" placeholder="1108" /></div>
+          <div class="form-group"><label>CPA $</label><input type="number" step="0.01" id="m-cpa" placeholder="12.57" /></div>
+          <div class="form-group"><label>Revenue $</label><input type="number" id="m-revenue" placeholder="43820" /></div>
+          <div class="form-group"><label>ROAS</label><input type="number" step="0.01" id="m-roas" placeholder="3.14" /></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="form-group" style="margin-bottom:20px">
+        <label>Internal Notes (not shown to client)</label>
+        <textarea id="di-notes" rows="3" placeholder="e.g. Budget increased this month, new campaign launched…"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="saveData()">Save & Update Dashboard</button>
+        <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PORTALS PAGE ── -->
+  <div class="page" id="page-portals">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Client Portals</div>
+        <div class="section-sub">Private links — each client sees only their report</div>
+      </div>
+    </div>
+    <div id="portals-list"></div>
+  </div>
+
+  <!-- ── REPORTS PAGE ── -->
+  <div class="page" id="page-reports">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Reports</div>
+        <div class="section-sub">Generate and manage AI-written client reports</div>
+      </div>
+    </div>
+    <div id="reports-list"></div>
+  </div>
+
+</main>
+
+<!-- ── ADD CLIENT MODAL ── -->
+<div class="modal-overlay" id="add-client-modal">
+  <div class="modal">
+    <div class="modal-title">Add New Client</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Client Name</label>
+        <input type="text" id="new-client-name" placeholder="e.g. Acme Corp" />
+      </div>
+      <div class="form-group">
+        <label>Industry</label>
+        <input type="text" id="new-client-industry" placeholder="e.g. E-commerce" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Google Ads Account ID</label>
+        <input type="text" id="new-client-google" placeholder="123-456-7890" />
+      </div>
+      <div class="form-group">
+        <label>Meta Ads Account ID</label>
+        <input type="text" id="new-client-meta" placeholder="act_123456789" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Status</label>
+        <select id="new-client-status">
+          <option value="active">Active</option>
+          <option value="draft">Draft</option>
+          <option value="paused">Paused</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Brand Color</label>
+        <input type="color" id="new-client-color" value="#d4500a" style="height:38px;padding:4px 8px;cursor:pointer" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('add-client-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addClient()">Add Client</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ───────────────────────────────────────────────────────────────────
+let clients = [
+  { id: 1, name: 'Acme Corp', industry: 'E-commerce', googleId: '123-456-7890', metaId: 'act_111222333', status: 'active', color: '#d4500a',
+    data: { gRev: 52140, mRev: 43820, gRoas: 3.94, mRoas: 3.14, gConv: 742, mConv: 1108, gCpa: 17.82, mCpa: 12.57, gImpr: 284000, mImpr: 521000 } },
+  { id: 2, name: 'Studio Pasha', industry: 'Fashion', googleId: '234-567-8901', metaId: 'act_222333444', status: 'active', color: '#1a6b4a',
+    data: { gRev: 31200, mRev: 28400, gRoas: 4.2, mRoas: 3.6, gConv: 420, mConv: 680, gCpa: 14.20, mCpa: 10.80, gImpr: 198000, mImpr: 340000 } },
+  { id: 3, name: 'NewVoices', industry: 'SaaS', googleId: '345-678-9012', metaId: 'act_333444555', status: 'active', color: '#1a3a6b',
+    data: { gRev: 18900, mRev: 14200, gRoas: 2.8, mRoas: 2.1, gConv: 180, mConv: 210, gCpa: 28.40, mCpa: 22.10, gImpr: 142000, mImpr: 210000 } },
+  { id: 4, name: 'La Beaute', industry: 'Beauty', googleId: '', metaId: '', status: 'draft', color: '#8b4aa8',
+    data: { gRev: 0, mRev: 0, gRoas: 0, mRoas: 0, gConv: 0, mConv: 0, gCpa: 0, mCpa: 0, gImpr: 0, mImpr: 0 } },
+];
+
+let nextId = 5;
+const COLORS = ['#d4500a','#1a6b4a','#1a3a6b','#8b4aa8','#c0392b','#d4870a'];
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  const titles = { overview:'Overview', clients:'Client Manager', 'data-input':'Data Input', portals:'Client Portals', reports:'Reports' };
+  document.getElementById('page-title').textContent = titles[name] || name;
+  if (name === 'overview') renderOverview();
+  if (name === 'clients') renderClientsTable();
+  if (name === 'data-input') populateClientSelect();
+  if (name === 'portals') renderPortals();
+  if (name === 'reports') renderReports();
+}
+
+// ── Render Overview ──────────────────────────────────────────────────────────
+function renderOverview() {
+  const active = clients.filter(c => c.status === 'active');
+  document.getElementById('stat-clients').textContent = active.length;
+
+  const grid = document.getElementById('clients-grid');
+  grid.innerHTML = '';
+  clients.forEach(c => {
+    const totalRev = (c.data.gRev + c.data.mRev);
+    const blendedRoas = c.data.gRoas && c.data.mRoas ? ((c.data.gRoas + c.data.mRoas) / 2).toFixed(2) : '—';
+    const totalConv = c.data.gConv + c.data.mConv;
+    const statusColor = c.data.gRoas >= 3 ? 'green' : c.data.gRoas >= 2 ? 'yellow' : 'red';
+
+    grid.innerHTML += `
+      <div class="client-card">
+        <div class="client-card-header">
+          <div class="client-name-row">
+            <div class="client-avatar" style="background:${c.color}">${c.name[0]}</div>
+            <div>
+              <div class="client-card-name">${c.name}</div>
+              <div class="client-card-period">${c.industry} · ${c.status}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="status-dot ${statusColor}"></div>
+            <span style="font-size:11px;color:var(--muted)">${statusColor === 'green' ? 'On Track' : statusColor === 'yellow' ? 'Watch' : c.status === 'draft' ? 'No Data' : 'Alert'}</span>
+          </div>
+        </div>
+        <div class="client-metrics">
+          <div class="metric-mini"><div class="label">Revenue</div><div class="val">$${(totalRev/1000).toFixed(1)}K</div></div>
+          <div class="metric-mini"><div class="label">ROAS</div><div class="val">${blendedRoas}x</div></div>
+          <div class="metric-mini"><div class="label">Conv.</div><div class="val">${totalConv.toLocaleString()}</div></div>
+          <div class="metric-mini"><div class="label">Impr.</div><div class="val">${((c.data.gImpr+c.data.mImpr)/1000).toFixed(0)}K</div></div>
+        </div>
+        <div class="client-card-actions">
+          <button class="btn btn-ghost btn-sm" onclick="goToDataInput(${c.id})">Edit Data</button>
+          <button class="btn btn-success btn-sm" onclick="copyPortalLink(${c.id})">Copy Link</button>
+          <button class="btn btn-secondary btn-sm" onclick="generateClientReport(${c.id})">✦ Report</button>
+        </div>
+      </div>`;
+  });
+}
+
+// ── Render Clients Table ──────────────────────────────────────────────────────
+function renderClientsTable() {
+  const tbody = document.getElementById('clients-tbody');
+  tbody.innerHTML = '';
+  clients.forEach(c => {
+    tbody.innerHTML += `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="client-avatar" style="background:${c.color};width:28px;height:28px;font-size:11px;border-radius:6px">${c.name[0]}</div>
+            <div><strong>${c.name}</strong><div style="font-size:11px;color:var(--muted)">${c.industry}</div></div>
+          </div>
+        </td>
+        <td><span class="badge ${c.status}">${c.status}</span></td>
+        <td><span style="font-family:monospace;font-size:12px">${c.googleId || '—'}</span></td>
+        <td><span style="font-family:monospace;font-size:12px">${c.metaId || '—'}</span></td>
+        <td><a href="#" style="color:var(--accent);font-size:12px" onclick="copyPortalLink(${c.id});return false">yoavnew.vercel.app/client/${c.name.toLowerCase().replace(/\s+/g,'-')}</a></td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="goToDataInput(${c.id})">Data</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteClient(${c.id})">Remove</button>
+          </div>
+        </td>
+      </tr>`;
+  });
+}
+
+// ── Add Client ────────────────────────────────────────────────────────────────
+function addClient() {
+  const name = document.getElementById('new-client-name').value.trim();
+  if (!name) { showToast('⚠ Please enter a client name'); return; }
+  const client = {
+    id: nextId++,
+    name,
+    industry: document.getElementById('new-client-industry').value || 'General',
+    googleId: document.getElementById('new-client-google').value,
+    metaId: document.getElementById('new-client-meta').value,
+    status: document.getElementById('new-client-status').value,
+    color: document.getElementById('new-client-color').value,
+    data: { gRev:0, mRev:0, gRoas:0, mRoas:0, gConv:0, mConv:0, gCpa:0, mCpa:0, gImpr:0, mImpr:0 }
+  };
+  clients.push(client);
+  closeModal('add-client-modal');
+  ['new-client-name','new-client-industry','new-client-google','new-client-meta'].forEach(id => document.getElementById(id).value = '');
+  renderOverview();
+  showToast('✓ Client added successfully');
+}
+
+function deleteClient(id) {
+  if (!confirm('Remove this client?')) return;
+  clients = clients.filter(c => c.id !== id);
+  renderClientsTable();
+  showToast('Client removed');
+}
+
+// ── Data Input ────────────────────────────────────────────────────────────────
+function populateClientSelect() {
+  const sel = document.getElementById('di-client');
+  sel.innerHTML = '<option value="">Select client…</option>';
+  clients.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+  const now = new Date();
+  document.getElementById('di-period').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+}
+
+function saveData() {
+  const clientId = parseInt(document.getElementById('di-client').value);
+  if (!clientId) { showToast('⚠ Please select a client'); return; }
+  const c = clients.find(c => c.id === clientId);
+  if (!c) return;
+
+  const g = (id) => parseFloat(document.getElementById(id).value) || 0;
+  c.data = {
+    gImpr: g('g-impressions'), gClicks: g('g-clicks'), gCtr: g('g-ctr'), gCpc: g('g-cpc'),
+    gConv: g('g-conv'), gCpa: g('g-cpa'), gRev: g('g-revenue'), gRoas: g('g-roas'),
+    mImpr: g('m-impressions'), mClicks: g('m-clicks'), mCtr: g('m-ctr'), mCpc: g('m-cpc'),
+    mConv: g('m-conv'), mCpa: g('m-cpa'), mRev: g('m-revenue'), mRoas: g('m-roas'),
+  };
+  showToast(`✓ Data saved for ${c.name}`);
+}
+
+function clearForm() {
+  ['g-impressions','g-clicks','g-ctr','g-cpc','g-conv','g-cpa','g-revenue','g-roas',
+   'm-impressions','m-clicks','m-ctr','m-cpc','m-conv','m-cpa','m-revenue','m-roas','di-notes']
+  .forEach(id => document.getElementById(id).value = '');
+}
+
+function goToDataInput(clientId) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item')[2].classList.add('active');
+  showPage('data-input', document.querySelectorAll('.nav-item')[2]);
+  setTimeout(() => {
+    document.getElementById('di-client').value = clientId;
+  }, 100);
+}
+
+// ── Portals ───────────────────────────────────────────────────────────────────
+function renderPortals() {
+  const list = document.getElementById('portals-list');
+  list.innerHTML = '';
+  clients.forEach(c => {
+    const slug = c.name.toLowerCase().replace(/\s+/g,'-');
+    const url = `yoavnew.vercel.app/client/${slug}`;
+    list.innerHTML += `
+      <div class="link-card">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="client-avatar" style="background:${c.color}">${c.name[0]}</div>
+          <div class="link-info">
+            <div class="link-client">${c.name}</div>
+            <div class="link-url">${url}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="badge ${c.status}">${c.status}</span>
+          <div class="link-actions">
+            <button class="btn btn-ghost btn-sm" onclick="copyPortalLink(${c.id})">📋 Copy Link</button>
+            <button class="btn btn-success btn-sm" onclick="generateClientReport(${c.id})">✦ Generate Report</button>
+          </div>
+        </div>
+      </div>`;
+  });
+}
+
+function copyPortalLink(id) {
+  const c = clients.find(c => c.id === id);
+  const slug = c.name.toLowerCase().replace(/\s+/g,'-');
+  const url = `https://yoavnew.vercel.app/client/${slug}`;
+  navigator.clipboard?.writeText(url).catch(()=>{});
+  showToast(`📋 Link copied for ${c.name}`);
+}
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+function renderReports() {
+  const list = document.getElementById('reports-list');
+  list.innerHTML = '';
+  clients.forEach(c => {
+    list.innerHTML += `
+      <div class="link-card">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="client-avatar" style="background:${c.color}">${c.name[0]}</div>
+          <div>
+            <div class="link-client">${c.name}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${c.industry} · Last updated: Today</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="generateClientReport(${c.id})">✦ Generate AI Report</button>
+      </div>
+      <div id="report-${c.id}" style="display:none;margin-bottom:16px">
+        <div class="ai-panel" style="border-radius:0 0 12px 12px;margin-top:-4px">
+          <div class="ai-insight-text" id="report-text-${c.id}"></div>
+        </div>
+      </div>`;
+  });
+}
+
+async function generateClientReport(id) {
+  const c = clients.find(c => c.id === id);
+  const reportEl = document.getElementById(`report-${id}`);
+  const textEl = document.getElementById(`report-text-${id}`);
+  if (reportEl) {
+    reportEl.style.display = 'block';
+    textEl.className = 'ai-insight-text loading';
+    textEl.innerHTML = '<div class="spinner"></div> Claude is writing the report…';
+  }
+
+  const prompt = `You are a senior PPC analyst writing a professional client-facing report.
+
+Client: ${c.name} (${c.industry})
+Data this period:
+- Google Ads: Revenue $${c.data.gRev?.toLocaleString()}, ROAS ${c.data.gRoas}x, Conversions ${c.data.gConv}, CPA $${c.data.gCpa}, Impressions ${c.data.gImpr?.toLocaleString()}
+- Meta Ads: Revenue $${c.data.mRev?.toLocaleString()}, ROAS ${c.data.mRoas}x, Conversions ${c.data.mConv}, CPA $${c.data.mCpa}, Impressions ${c.data.mImpr?.toLocaleString()}
+
+Write a 4-5 sentence executive summary for the client. Highlight the biggest win, one improvement area, and one recommendation. Keep it professional, positive, and clear. No bullet points.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(b => b.text || '').join('') || 'Could not generate report.';
+    if (textEl) { textEl.className = 'ai-insight-text'; textEl.textContent = text; }
+    showToast(`✓ Report generated for ${c.name}`);
+  } catch(e) {
+    if (textEl) { textEl.className = 'ai-insight-text'; textEl.textContent = 'Error connecting to Claude API.'; }
+  }
+}
+
+async function generateInsights() {
+  const el = document.getElementById('ai-overview-text');
+  el.className = 'ai-insight-text loading';
+  el.innerHTML = '<div class="spinner"></div> Claude is analyzing all clients…';
+
+  const summary = clients.map(c =>
+    `${c.name}: Google ROAS ${c.data.gRoas}x, Meta ROAS ${c.data.mRoas}x, Total Revenue $${(c.data.gRev+c.data.mRev).toLocaleString()}, Total Conversions ${c.data.gConv+c.data.mConv}`
+  ).join('\n');
+
+  const prompt = `You are a PPC agency director reviewing performance across all clients. Here's the data:\n\n${summary}\n\nWrite a 3-4 sentence internal team briefing: which client is performing best, which needs attention, and one strategic recommendation for the team this week. Be direct and actionable.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(b => b.text || '').join('') || 'Could not generate insights.';
+    el.className = 'ai-insight-text';
+    el.textContent = text;
+  } catch(e) {
+    el.className = 'ai-insight-text';
+    el.textContent = 'Error connecting to Claude API.';
+  }
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderOverview();
+</script>
+</body>
+</html>
