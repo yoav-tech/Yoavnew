@@ -9,6 +9,7 @@ import { PlatformView } from '@/pages/PlatformView'
 import { CampaignDrillDown } from '@/pages/CampaignDrillDown'
 import { Funnel } from '@/pages/Funnel'
 import { Settings } from '@/pages/Settings'
+import { supabaseMisconfigured } from '@/lib/supabase'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,5 +70,22 @@ const router = createBrowserRouter([
 ])
 
 export default function App() {
+  if (supabaseMisconfigured) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-8">
+        <div className="max-w-md w-full bg-zinc-900 border border-red-500/40 rounded-xl p-8 text-center">
+          <div className="text-red-400 text-4xl mb-4">⚠</div>
+          <h1 className="text-white text-xl font-semibold mb-2">Missing Environment Variables</h1>
+          <p className="text-zinc-400 text-sm mb-6">
+            Add the following environment variables to your Vercel project and redeploy:
+          </p>
+          <ul className="text-left text-sm font-mono bg-zinc-800 rounded-lg p-4 space-y-2 text-zinc-300">
+            <li>VITE_SUPABASE_URL</li>
+            <li>VITE_SUPABASE_ANON_KEY</li>
+          </ul>
+        </div>
+      </div>
+    )
+  }
   return <RouterProvider router={router} />
 }
