@@ -73,12 +73,17 @@ export function useCampaignHierarchy(campaignId: string | undefined, dateRange: 
         { spend: 0, revenue: 0, clicks: 0, impressions: 0, conversions: 0 }
       )
 
+      const accountName = campaignRows[0]?.account_name ?? ''
+
       return {
-        campaign_id: campaignId,
-        campaign_name: campaignName,
-        platform,
-        ...totals,
-        adsets: [],
+        campaign: {
+          campaign_id: campaignId,
+          campaign_name: campaignName,
+          account_name: accountName,
+          platform,
+          ...totals,
+        },
+        adsets: [] as { adset: { adset_id: string; adset_name: string; spend: number; revenue: number; conversions: number }; ads: never[] }[],
       }
     },
   })
