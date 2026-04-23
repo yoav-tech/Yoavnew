@@ -1,84 +1,128 @@
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
-import { supabase } from '@/lib/supabase'
+import { format, subDays, differenceInDays } from 'date-fns'
+import { fetchWindsor, sumMetrics } from '@/lib/windsor'
 import type { DateRange } from '@/contexts/FiltersContext'
-import type {
-  Platform,
-  KPISummaryResult,
-  DailyTrendRow,
-  PlatformBreakdownRow,
-  FunnelMetrics,
-  FunnelByPlatformRow,
-} from '@/types/database'
+import type { Platform } from '@/types/database'
 
-function baseParams(dateRange: DateRange, clientId: string | null, platforms: Platform[]) {
-  return {
-    p_date_from: format(dateRange.from, 'yyyy-MM-dd'),
-    p_date_to: format(dateRange.to, 'yyyy-MM-dd'),
-    p_client_id: clientId,
-    p_platforms: platforms.length > 0 ? platforms : null,
+function fmt(d: Date) { return format(d, 'yyyy-MM-dd') }
+
+function filterByPlatform(rows: Awaited<ReturnType<typeof fetchWindsor>>, platforms: Platform[]) {
+  if (platforms.length === 0) return rows
+  return rows.filter((r) => platforms.includes(r.datasource as Platform))
+}
+
+function useWindsorRaw(from: string, to: string) {
+  return useQuery({
+    queryKey: ['windsor', from, to],
+    queryFn: () => fetchWindsor(from, to),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  })
+}
+
+export function useKPISummary(dateRange: DateRange, _clientId: string | null, platforms: Platform[]) {
+  const from = fmt(dateRange.from)
+  const to = fmt(dateRange.to)
+  const days = differenceInDays(dateRange.to, dateRange.from) + 1
+  const priorTo = fmt(subDays(dateRange.from, 1))
+  const priorFrom = fmt(subDays(dateRange.from, days))
+
+  const curr = useWindsorRaw(from, to)
+  const prior = useWindsorRaw(priorFrom, priorTo)
+
+  const isLoading = curr.isLoading || prior.isLoading
+  const error = curr.error || prior.error
+
+  const data = (!isLoading && curr.data && prior.data) ? {
+    current: sumMetrics(filterByPlatform(curr.data, platforms)),
+    prior: sumMetrics(filterByPlatform(prior.data, platforms)),
+  } : undefined
+
+  return { data, isLoading, error }
+}
+
+export function useDailyTrend(dateRange: DateRange, _clientId: string | null, platforms: Platform[]) {
+  const from = fmt(dateRange.from)
+  const to = fmt(dateRange.to)
+  const { data: rows = [], isLoading, error } = useWindsorRaw(from, to)
+
+  const filtered = filterByPlatform(rows, platforms)
+
+  const byDate = filtered.reduce<Record<string, { date: string; spend: number; revenue: number; clicks: number; conversions: number }>>((acc, r) => {
+    if (!acc[r.date]) acc[r.date] = { date: r.date, spend: 0, revenue: 0, clicks: 0, conversions: 0 }
+    acc[r.date].spend += r.spend
+    acc[r.date].revenue += r.revenue
+    acc[r.date].clicks += r.clicks
+    acc[r.date].conversions += r.conversions
+    return acc
+  }, {})
+
+  const data = Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date))
+
+  return { data, isLoading, error }
+}
+
+export function usePlatformBreakdown(dateRange: DateRange, _clientId: string | null) {
+  const from = fmt(dateRange.from)
+  const to = fmt(dateRange.to)
+  const { data: rows = [], isLoading, error } = useWindsorRaw(from, to)
+
+  const byPlatform = rows.reduce<Record<string, { platform: string; spend: number; revenue: number; clicks: number; conversions: number; impressions: number }>>((acc, r) => {
+    if (!acc[r.datasource]) acc[r.datasource] = { platform: r.datasource, spend: 0, revenue: 0, clicks: 0, conversions: 0, impressions: 0 }
+    acc[r.datasource].spend += r.spend
+    acc[r.datasource].revenue += r.revenue
+    acc[r.datasource].clicks += r.clicks
+    acc[r.datasource].conversions += r.conversions
+    acc[r.datasource].impressions += r.impressions
+    return acc
+  }, {})
+
+  const data = Object.values(byPlatform).sort((a, b) => b.spend - a.spend)
+
+  return { data, isLoading, error }
+}
+
+export function useFunnelMetrics(dateRange: DateRange, _clientId: string | null, platforms: Platform[]) {
+  const from = fmt(dateRange.from)
+  const to = fmt(dateRange.to)
+  const { data: rows = [], isLoading, error } = useWindsorRaw(from, to)
+
+  const filtered = filterByPlatform(rows, platforms)
+  const totals = sumMetrics(filtered)
+
+  const data = {
+    impressions: totals.impressions,
+    clicks: totals.clicks,
+    conversions: totals.conversions,
+    spend: totals.spend,
+    revenue: totals.revenue,
+    ctr: totals.impressions > 0 ? totals.clicks / totals.impressions : 0,
+    cvr: totals.clicks > 0 ? totals.conversions / totals.clicks : 0,
+    cpa: totals.conversions > 0 ? totals.spend / totals.conversions : 0,
+    roas: totals.spend > 0 ? totals.revenue / totals.spend : 0,
   }
+
+  return { data: isLoading ? undefined : data, isLoading, error }
 }
 
-function qk(key: string, dateRange: DateRange, clientId: string | null, platforms?: Platform[]) {
-  return [key, format(dateRange.from, 'yyyy-MM-dd'), format(dateRange.to, 'yyyy-MM-dd'), clientId, platforms ?? []]
-}
+export function useFunnelByPlatform(dateRange: DateRange, _clientId: string | null, platforms: Platform[]) {
+  const from = fmt(dateRange.from)
+  const to = fmt(dateRange.to)
+  const { data: rows = [], isLoading, error } = useWindsorRaw(from, to)
 
-export function useKPISummary(dateRange: DateRange, clientId: string | null, platforms: Platform[]) {
-  return useQuery({
-    queryKey: qk('kpi-summary', dateRange, clientId, platforms),
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_kpi_summary', baseParams(dateRange, clientId, platforms))
-      if (error) throw error
-      return data as unknown as KPISummaryResult
-    },
-  })
-}
+  const filtered = filterByPlatform(rows, platforms)
 
-export function useDailyTrend(dateRange: DateRange, clientId: string | null, platforms: Platform[]) {
-  return useQuery({
-    queryKey: qk('daily-trend', dateRange, clientId, platforms),
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_daily_trend', baseParams(dateRange, clientId, platforms))
-      if (error) throw error
-      return (data ?? []) as unknown as DailyTrendRow[]
-    },
-  })
-}
+  const byPlatform = filtered.reduce<Record<string, { platform: string; impressions: number; clicks: number; conversions: number; spend: number; revenue: number }>>((acc, r) => {
+    if (!acc[r.datasource]) acc[r.datasource] = { platform: r.datasource, impressions: 0, clicks: 0, conversions: 0, spend: 0, revenue: 0 }
+    acc[r.datasource].impressions += r.impressions
+    acc[r.datasource].clicks += r.clicks
+    acc[r.datasource].conversions += r.conversions
+    acc[r.datasource].spend += r.spend
+    acc[r.datasource].revenue += r.revenue
+    return acc
+  }, {})
 
-export function usePlatformBreakdown(dateRange: DateRange, clientId: string | null) {
-  return useQuery({
-    queryKey: qk('platform-breakdown', dateRange, clientId),
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_platform_breakdown', {
-        p_date_from: format(dateRange.from, 'yyyy-MM-dd'),
-        p_date_to: format(dateRange.to, 'yyyy-MM-dd'),
-        p_client_id: clientId,
-      })
-      if (error) throw error
-      return (data ?? []) as unknown as PlatformBreakdownRow[]
-    },
-  })
-}
+  const data = Object.values(byPlatform)
 
-export function useFunnelMetrics(dateRange: DateRange, clientId: string | null, platforms: Platform[]) {
-  return useQuery({
-    queryKey: qk('funnel-metrics', dateRange, clientId, platforms),
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_funnel_metrics', baseParams(dateRange, clientId, platforms))
-      if (error) throw error
-      return data as unknown as FunnelMetrics
-    },
-  })
-}
-
-export function useFunnelByPlatform(dateRange: DateRange, clientId: string | null, platforms: Platform[]) {
-  return useQuery({
-    queryKey: qk('funnel-by-platform', dateRange, clientId, platforms),
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_funnel_by_platform', baseParams(dateRange, clientId, platforms))
-      if (error) throw error
-      return (data ?? []) as unknown as FunnelByPlatformRow[]
-    },
-  })
+  return { data, isLoading, error }
 }
