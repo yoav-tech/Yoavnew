@@ -38,10 +38,12 @@ export function Dashboard() {
   const navigate = useNavigate()
   const [sortKey, setSortKey] = useState<SortKey>('spend')
 
-  const { data: kpi, isLoading: kpiLoading } = useKPISummary(dateRange, clientId, platforms)
+  const { data: kpi, isLoading: kpiLoading, error: kpiError } = useKPISummary(dateRange, clientId, platforms)
   const { data: trend = [], isLoading: trendLoading } = useDailyTrend(dateRange, clientId, platforms)
   const { data: platformData = [], isLoading: platformLoading } = usePlatformBreakdown(dateRange, clientId)
   const { data: campaigns = [], isLoading: campaignsLoading } = useTopCampaigns(dateRange, clientId, null, 10)
+
+  const dataError = kpiError as Error | null
 
   const curr = kpi?.current
   const prior = kpi?.prior
@@ -59,6 +61,11 @@ export function Dashboard() {
 
   return (
     <div className="p-4 lg:p-6 space-y-5 max-w-[1600px] mx-auto">
+      {dataError && (
+        <div className="bg-red-950/40 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400">
+          <span className="font-semibold">Windsor.ai error:</span> {dataError.message}
+        </div>
+      )}
       {/* KPI Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
         {kpiLoading
